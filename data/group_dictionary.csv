@@ -1,0 +1,12 @@
+CODE;NUM;SECTOR
+G1;1;Financials
+G2;2;Industrials
+G3;3;Energy
+G4;4;Information Technology
+G5;5;Consumer Staples
+G6;6;Health Care
+G7;7;Utilities
+G8;8;Materials
+G9;9;Consumer Discretionary
+G10;10;Real Estate
+G11;11;Communication Services

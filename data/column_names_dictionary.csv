@@ -1,0 +1,118 @@
+CODE;INDEX;INDICATOR NAME
+Group;1;Industry sector
+I1;2;Return on Average Total Assets - %, TTM
+I2;3;Return on Average Common Equity - %, TTM
+I3;4;EBITDA Percentage of Common Equity, TTM
+I4;5;EBITDA Percentage of Total Fixed Assets - Net, TTM
+I5;6;Excess Cash Margin - %
+I6;7;Free Cash Flow Percentage of Total Revenue, TTM
+I7;8;Cash Flow from Operations Pct of Total Revenue, TTM
+I8;9;Cash Flow from Operations Pct of Common Equity, TTM
+I9;10;Cash Flow from Operations to Total Assets, TTM
+I10;11;Reinvestment Rate - %, TTM
+I11;12;Return on Capital Employed - %, TTM
+I12;13;Working Capital Percentage of Total Revenue, YoY Diff, TTM
+I13;14;Dividend Payout Ratio - %, TTM
+I14;15;Payables Turnover, TTM
+I15;16;Cash Flow from Operations Ratio, TTM
+I16;17;Cash Percentage of Total Revenue, TTM
+I17;18;Debt - Total to EBITDA, TTM
+I18;19;FCF Net of Dividends Pct of Debt, Pref Eq & Min Intr, TTM
+I19;20;Net Debt to EBITDA, TTM
+I20;21;Solvency Ratio - %, TTM
+I21;22;Inventory Turnover, TTM
+I22;23;Net Operating Asset Turnover, TTM
+I23;24;Sales to Receivables, TTM
+I24;25;Accounts Receivable Turnover, TTM
+I25;26;Asset Turnover, TTM
+I26;27;Average Net Trade Cycle Days, TTM
+I27;28;Current Asset Turnover, TTM
+I28;29;Fixed Asset Turnover, TTM
+I29;30;Enterprise Value to EBIT, TTM
+I30;31;Enterprise Value to EBITDA, TTM
+I31;32;Enterprise Value to Total Revenue, TTM
+I32;33;Gross Profit Margin - %, TTM
+I33;34;Operating Margin - %, TTM
+I34;35;EBIT Margin - %, TTM
+I35;36;EBITDA Margin - %, TTM
+I36;37;Net Margin - %, TTM
+I37;38;Cash Flow Margin - %, TTM
+I38;39;Price to Cash Flow per Share, TTM
+I39;40;Price to EBITDA per Share, TTM
+I40;41;Price to Total Revenue per Share, TTM
+I41;42;EPS Basic excl Exord, Common - Total to Price - %, TTM
+I42;43;EPS Basic incl Exord, Common - Total to Price - %, TTM
+I43;44;Dividend Yield - Common - Net - Issue - %, TTM
+I44;45;PE Growth Ratio, TTM
+I45;46;Total Current Assets Percentage of Total Assets
+I46;47;Total Current Liabilities Percentage of Total Assets
+I47;48;Cash & Cash Equivalents to Total Assets
+I48;49;Inventories Percentage of Total Assets
+I49;50;Current Ratio
+I50;51;Quick Ratio
+I51;52;Working Capital to Total Assets
+I52;53;Cash Ratio
+I53;54;Net Debt to Total Equity
+I54;55;Total Liabilities Percentage of Total Assets
+I55;56;Long Term Debt Percentage of Total Assets
+I56;57;Book Value Percentage of Market Capitalization
+I57;58;Cash Flow from Operations Pct of Capital Expenditures
+I58;59;Price to Cash Flow from Operations per Share, TTM
+dI1;60;1-year Absolute Change of Return on Average Total Assets - %, TTM
+dI2;61;1-year Absolute Change of Return on Average Common Equity - %, TTM
+dI3;62;1-year Absolute Change of EBITDA Percentage of Common Equity, TTM
+dI4;63;1-year Absolute Change of EBITDA Percentage of Total Fixed Assets - Net, TTM
+dI5;64;1-year Absolute Change of Excess Cash Margin - %
+dI6;65;1-year Absolute Change of Free Cash Flow Percentage of Total Revenue, TTM
+dI7;66;1-year Absolute Change of Cash Flow from Operations Pct of Total Revenue, TTM
+dI8;67;1-year Absolute Change of Cash Flow from Operations Pct of Common Equity, TTM
+dI9;68;1-year Absolute Change of Cash Flow from Operations to Total Assets, TTM
+dI10;69;1-year Absolute Change of Reinvestment Rate - %, TTM
+dI11;70;1-year Absolute Change of Return on Capital Employed - %, TTM
+dI12;71;1-year Absolute Change of Working Capital Percentage of Total Revenue, YoY Diff, TTM
+dI13;72;1-year Absolute Change of Dividend Payout Ratio - %, TTM
+dI14;73;1-year Absolute Change of Payables Turnover, TTM
+dI15;74;1-year Absolute Change of Cash Flow from Operations Ratio, TTM
+dI16;75;1-year Absolute Change of Cash Percentage of Total Revenue, TTM
+dI17;76;1-year Absolute Change of Debt - Total to EBITDA, TTM
+dI18;77;1-year Absolute Change of FCF Net of Dividends Pct of Debt, Pref Eq & Min Intr, TTM
+dI19;78;1-year Absolute Change of Net Debt to EBITDA, TTM
+dI20;79;1-year Absolute Change of Solvency Ratio - %, TTM
+dI21;80;1-year Absolute Change of Inventory Turnover, TTM
+dI22;81;1-year Absolute Change of Net Operating Asset Turnover, TTM
+dI23;82;1-year Absolute Change of Sales to Receivables, TTM
+dI24;83;1-year Absolute Change of Accounts Receivable Turnover, TTM
+dI25;84;1-year Absolute Change of Asset Turnover, TTM
+dI26;85;1-year Absolute Change of Average Net Trade Cycle Days, TTM
+dI27;86;1-year Absolute Change of Current Asset Turnover, TTM
+dI28;87;1-year Absolute Change of Fixed Asset Turnover, TTM
+dI29;88;1-year Absolute Change of Enterprise Value to EBIT, TTM
+dI30;89;1-year Absolute Change of Enterprise Value to EBITDA, TTM
+dI31;90;1-year Absolute Change of Enterprise Value to Total Revenue, TTM
+dI32;91;1-year Absolute Change of Gross Profit Margin - %, TTM
+dI33;92;1-year Absolute Change of Operating Margin - %, TTM
+dI34;93;1-year Absolute Change of EBIT Margin - %, TTM
+dI35;94;1-year Absolute Change of EBITDA Margin - %, TTM
+dI36;95;1-year Absolute Change of Net Margin - %, TTM
+dI37;96;1-year Absolute Change of Cash Flow Margin - %, TTM
+dI38;97;1-year Absolute Change of Price to Cash Flow per Share, TTM
+dI39;98;1-year Absolute Change of Price to EBITDA per Share, TTM
+dI40;99;1-year Absolute Change of Price to Total Revenue per Share, TTM
+dI41;100;1-year Absolute Change of EPS Basic excl Exord, Common - Total to Price - %, TTM
+dI42;101;1-year Absolute Change of EPS Basic incl Exord, Common - Total to Price - %, TTM
+dI43;102;1-year Absolute Change of Dividend Yield - Common - Net - Issue - %, TTM
+dI44;103;1-year Absolute Change of PE Growth Ratio, TTM
+dI45;104;1-year Absolute Change of Total Current Assets Percentage of Total Assets
+dI46;105;1-year Absolute Change of Total Current Liabilities Percentage of Total Assets
+dI47;106;1-year Absolute Change of Cash & Cash Equivalents to Total Assets
+dI48;107;1-year Absolute Change of Inventories Percentage of Total Assets
+dI49;108;1-year Absolute Change of Current Ratio
+dI50;109;1-year Absolute Change of Quick Ratio
+dI51;110;1-year Absolute Change of Working Capital to Total Assets
+dI52;111;1-year Absolute Change of Cash Ratio
+dI53;112;1-year Absolute Change of Net Debt to Total Equity
+dI54;113;1-year Absolute Change of Total Liabilities Percentage of Total Assets
+dI55;114;1-year Absolute Change of Long Term Debt Percentage of Total Assets
+dI56;115;1-year Absolute Change of Book Value Percentage of Market Capitalization
+dI57;116;1-year Absolute Change of Cash Flow from Operations Pct of Capital Expenditures
+dI58;117;1-year Absolute Change of Price to Cash Flow from Operations per Share, TTM
