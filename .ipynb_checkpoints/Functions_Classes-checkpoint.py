@@ -90,6 +90,8 @@ class ModelSelection:
         self.error_cost_matrix_results = dict()
         self.only_train_model = None
         self.only_x_train_preds = None
+
+        self.transformers = list()
         
     def encode_y_train(self):
         lab_encoder = LabelEncoder()
@@ -109,13 +111,12 @@ class ModelSelection:
         return ("binary_encoder", LabelEncoder(), self.ordinal_cols)
 
     def create_col_transformer(self):
-        transformers = []
         if self.numerical_cols is not None:
-            transformers.append(self.create_numerical_col_pipe())
+            self.transformers.append(self.create_numerical_col_pipe())
         if self.one_hot_cols is not None:
-            transformers.append(self.create_nominal_onehot_col_pipe())
+            self.transformers.append(self.create_nominal_onehot_col_pipe())
         if self.ordinal_cols is not None:
-            transformers.append(self.create_ordinal_col_pipe())
+            self.transformers.append(self.create_ordinal_col_pipe())
         
         if self.freq_encod_cols is not None:
             freq_encoder = CountFrequencyEncoder(
@@ -128,7 +129,7 @@ class ModelSelection:
             
 
         self.col_transformer = ColumnTransformer(
-            transformers=transformers
+            transformers=self.transformers
         )
         
     def get_estimator_by_name(self, estimator_name):
@@ -139,12 +140,19 @@ class ModelSelection:
         
     def calculate_cv_f1(self, n_folds, scoring_average='f1_weighted'): # 'f1_micro' or 'f1_macro'
         for name, estimator in self.estimators:
-            f1_pipe = Pipeline(
-                [
-                    ('ColumnTransformers', self.col_transformer), 
-                    ('ClassificationModel', estimator)
-                ]
-            )
+            if len(self.transformers) == 0:
+                f1_pipe = Pipeline(
+                    [
+                        ('ClassificationModel', estimator)
+                    ]
+                )
+            else:
+                f1_pipe = Pipeline(
+                    [
+                        ('ColumnTransformers', self.col_transformer), 
+                        ('ClassificationModel', estimator)
+                    ]
+                )
             
             stratif_cv = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=0)
             
@@ -169,13 +177,21 @@ class ModelSelection:
         print(f"\nBest Estimator (F1): {self.best_estimator_name_f1}")
         
     def calculate_cv_auc(self, n_folds, scoring_average='roc_auc_ovo_weighted'): #or 'roc_auc_ovr_weighted'
+
         for name, estimator in self.estimators:
-            auc_pipe = Pipeline(
-                [
-                    ('ColumnTransformers', self.col_transformer), 
-                    ('ClassificationModel', estimator)
-                ]
-            )
+            if len(self.transformers) == 0:
+                auc_pipe = Pipeline(
+                    [
+                        ('ClassificationModel', estimator)
+                    ]
+                )
+            else:
+                auc_pipe = Pipeline(
+                    [
+                        ('ColumnTransformers', self.col_transformer), 
+                        ('ClassificationModel', estimator)
+                    ]
+                )
             
             stratif_cv = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=0)
             
@@ -201,12 +217,19 @@ class ModelSelection:
     
     def calculate_cv_accuracy(self, n_folds, scoring_average='accuracy'):
         for name, estimator in self.estimators:
-            accuracy_pipe = Pipeline(
-                [
-                    ('ColumnTransformers', self.col_transformer), 
-                    ('ClassificationModel', estimator)
-                ]
-            )
+            if len(self.transformers) == 0:
+                accuracy_pipe = Pipeline(
+                    [
+                        ('ClassificationModel', estimator)
+                    ]
+                )
+            else:
+                accuracy_pipe = Pipeline(
+                    [
+                        ('ColumnTransformers', self.col_transformer), 
+                        ('ClassificationModel', estimator)
+                    ]
+                )
             
             stratif_cv = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=0)
             
@@ -240,12 +263,20 @@ class ModelSelection:
         cost_matrix_socrer = make_scorer(self.custom_error_cost_score, greater_is_better=True)
         
         for name, estimator in self.estimators:
-            cost_matrix_pipe = Pipeline(
-                [
-                    ('ColumnTransformers', self.col_transformer), 
-                    ('ClassificationModel', estimator)
-                ]
-            )
+            if len(self.transformers) == 0:
+                cost_matrix_pipe = Pipeline(
+                    [
+                        ('ClassificationModel', estimator)
+                    ]
+                )
+            else:
+                cost_matrix_pipe = Pipeline(
+                    [
+                        ('ColumnTransformers', self.col_transformer), 
+                        ('ClassificationModel', estimator)
+                    ]
+                )
+            
             stratif_cv = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=0)
             
             cost_matrix_cv_score = cross_val_score(
@@ -271,12 +302,20 @@ class ModelSelection:
         
         
     def print_classification_report_cv(self, estimator, n_folds=10):
-        pipe = Pipeline(
-            [
-                ('ColumnTransformers', self.col_transformer), 
-                ('ClassificationModel', estimator)
-            ]
-        )
+        if len(self.transformers) == 0:
+            pipe = Pipeline(
+                [
+                    ('ClassificationModel', estimator)
+                ]
+            )
+        else:
+            pipe = Pipeline(
+                [
+                    ('ColumnTransformers', self.col_transformer), 
+                    ('ClassificationModel', estimator)
+                ]
+            )
+
         stratif_cv = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=0)
         y_pred = cross_val_predict(pipe, self.x_train, self.encoded_y_train, cv=stratif_cv)
         print(f'CV Classification Report Result for {estimator}')
@@ -284,10 +323,19 @@ class ModelSelection:
         print(classification_report(self.encoded_y_train, y_pred))
 
     def plot_confusion_matrix_cv(self, estimator, figsize=(5, 5), n_folds=10):
-        pipe = Pipeline([
-            ('ColumnTransformers', self.col_transformer), 
-            ('ClassificationModel', estimator)
-        ])
+        if len(self.transformers) == 0:
+            pipe = Pipeline(
+                [
+                    ('ClassificationModel', estimator)
+                ]
+            )
+        else:
+            pipe = Pipeline(
+                [
+                    ('ColumnTransformers', self.col_transformer), 
+                    ('ClassificationModel', estimator)
+                ]
+            )
         
         stratif_cv = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=0)
         y_pred = cross_val_predict(pipe, self.x_train, self.encoded_y_train, cv=stratif_cv)
@@ -309,10 +357,20 @@ class ModelSelection:
         cv=5, 
         scoring='f1_weighted'
     ):
-        pipe = Pipeline([
-            ('ColumnTransformers', self.col_transformer), 
-            ('ClassificationModel', estimator)
-        ])
+        if len(self.transformers) == 0:
+            pipe = Pipeline(
+                [
+                    ('ClassificationModel', estimator)
+                ]
+            )
+        else:
+            pipe = Pipeline(
+                [
+                    ('ColumnTransformers', self.col_transformer), 
+                    ('ClassificationModel', estimator)
+                ]
+            )
+            
         grid_search = GridSearchCV(
             estimator=pipe, 
             param_grid=params, 
@@ -365,55 +423,68 @@ class ModelSelection:
         plt.show()
 
 
-def apply_smote_oh_encode(data, categorical_column, one_h_encoder, cat: bool = True, random_state=0):
+def apply_one_hot_encoding(data, categorical_column):
+    """
+    Apply one-hot encoding to a categorical column in the DataFrame.
+
+    Parameters:
+        data (DataFrame): Input DataFrame containing features.
+        categorical_column (str): Name of the categorical column to be one-hot encoded.
+
+    Returns:
+        ohe_encoder (OneHotEncoder): One-hot encoder object fitted on categorical data.
+        X_encoded (DataFrame): DataFrame with categorical column replaced by one-hot encoded columns.
+    """
+    ohe_encoder = OneHotEncoder()
+
+    X_encoded = pd.DataFrame(
+        ohe_encoder.fit_transform(data[[categorical_column]]).toarray(),
+        columns=ohe_encoder.get_feature_names_out([categorical_column])
+    )
+
+    X_encoded = pd.concat([data.drop(columns=[categorical_column]), X_encoded], axis=1)
+
+    return X_encoded, ohe_encoder
+
+
+def apply_smote(data, random_state=0):
     """
     Apply SMOTE (Synthetic Minority Over-sampling Technique) to balance the dataset.
-    
+
     Parameters:
         data (DataFrame): Input DataFrame containing features and target variable.
-        categorical_column (str): Name of the categorical column to be one-hot encoded.
-        one_h_encoder (OneHotEncoder): One-hot encoder object fitted on categorical data.
-        cat (bool): Whether to perform one-hot encoding. Defaults to True.
+        categorical_column (str): Name of the categorical column to be one-hot encoded (optional).
         random_state (int): Random state for reproducibility.
-        
+
     Returns:
         smote_df (DataFrame): Resampled DataFrame with balanced classes.
     """
-    if cat:
-        X = data.drop(columns=['Class'])
-        y = data['Class']
-    
-        X_encoded = pd.DataFrame(
-            one_h_encoder.transform(X[[categorical_column]]).toarray(),
-            columns=one_h_encoder.get_feature_names_out([categorical_column])
-        )
-    
-        X = X.drop(columns=[categorical_column])
-        X = pd.concat([X, X_encoded], axis=1)
-    else:
-        X = data.drop(columns=['Class'])
-        y = data['Class']
-    
+    X = data.drop(columns=['Class'])
+    y = data['Class']
+
     smote = SMOTE(sampling_strategy='auto', random_state=random_state)
     X_smote, y_smote = smote.fit_resample(X, y)
-    
+
     smote_df = pd.concat([pd.DataFrame(X_smote, columns=X.columns), pd.Series(y_smote, name='Class')], axis=1)
-    
+
     return smote_df
 
 
-def apply_std_scaler(data, columns, scaler):
+def apply_std_scaler(data, columns):
     """
     Apply standard scaling to specified columns of the data using a pre-fitted scaler.
 
     Parameters:
         data (DataFrame): Input DataFrame containing features.
         columns (list): List of column names to apply standard scaling to.
-        scaler (StandardScaler): Pre-fitted StandardScaler object.
 
     Returns:
         scaled_data (DataFrame): DataFrame with specified columns scaled.
+        scaler (StandardScaler): Fitted StandardScaler object.
     """
+    std_scaler = StandardScaler()
     scaled_data = data.copy()
-    scaled_data[columns] = scaler.transform(data[columns])
-    return scaled_data
+    scaled_data[columns] = std_scaler.fit_transform(data[columns])
+    
+    return scaled_data, std_scaler
+
