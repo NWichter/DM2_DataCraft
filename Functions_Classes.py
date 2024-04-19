@@ -15,9 +15,16 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.decomposition import PCA
 import random
+from sklearn.neighbors import LocalOutlierFactor
+from sklearn.feature_selection import RFECV
+
+
+
+from sklearn.impute import SimpleImputer, KNNImputer
+
 
 from imblearn.under_sampling import RandomUnderSampler
-from imblearn.over_sampling import SMOTE
+from imblearn.over_sampling import SMOTE, RandomOverSampler
 
 from feature_engine.encoding import CountFrequencyEncoder
 
@@ -422,7 +429,6 @@ class ModelSelection:
         plt.title('Confusion Matrix')
         plt.show()
 
-
 def apply_one_hot_encoding(data, categorical_column):
     """
     Apply one-hot encoding to a categorical column in the DataFrame.
@@ -435,39 +441,88 @@ def apply_one_hot_encoding(data, categorical_column):
         ohe_encoder (OneHotEncoder): One-hot encoder object fitted on categorical data.
         X_encoded (DataFrame): DataFrame with categorical column replaced by one-hot encoded columns.
     """
+    data_copy = data.copy()
     ohe_encoder = OneHotEncoder()
 
     X_encoded = pd.DataFrame(
-        ohe_encoder.fit_transform(data[[categorical_column]]).toarray(),
+        ohe_encoder.fit_transform(data_copy[[categorical_column]]).toarray(),
         columns=ohe_encoder.get_feature_names_out([categorical_column])
     )
 
-    X_encoded = pd.concat([data.drop(columns=[categorical_column]), X_encoded], axis=1)
+    X_encoded_last = pd.concat([data_copy.drop(columns=[categorical_column]).reset_index(drop=True), X_encoded], axis=1)
 
-    return X_encoded, ohe_encoder
+    return X_encoded_last, ohe_encoder
 
 
-def apply_smote(data, random_state=0):
+def apply_smote(X, y, random_state=0):
     """
     Apply SMOTE (Synthetic Minority Over-sampling Technique) to balance the dataset.
 
     Parameters:
-        data (DataFrame): Input DataFrame containing features and target variable.
-        categorical_column (str): Name of the categorical column to be one-hot encoded (optional).
+        X (DataFrame): Input DataFrame containing features.
+        y (Series): Target variable.
         random_state (int): Random state for reproducibility.
 
     Returns:
-        smote_df (DataFrame): Resampled DataFrame with balanced classes.
+        smote_x (DataFrame): Resampled DataFrame with balanced features.
+        smote_y (Series): Resampled target variable.
+    """
+    smote = SMOTE(sampling_strategy='auto', random_state=random_state)
+    X_smote, y_smote = smote.fit_resample(X, y)
+
+    smote_x = pd.DataFrame(X_smote, columns=X.columns)
+    smote_y = pd.Series(y_smote, name='Class')
+
+    return smote_x, smote_y
+
+
+def apply_random_oversampling(data, random_state=0):
+    """
+    Apply RandomOverSampler to balance the dataset.
+
+    Parameters:
+        data (DataFrame): Input DataFrame containing features and target variable.
+        random_state (int): Random state for reproducibility.
+
+    Returns:
+        oversampled_X (DataFrame): Resampled DataFrame with balanced features.
+        oversampled_y (Series): Resampled target variable.
     """
     X = data.drop(columns=['Class'])
     y = data['Class']
 
-    smote = SMOTE(sampling_strategy='auto', random_state=random_state)
-    X_smote, y_smote = smote.fit_resample(X, y)
+    ros = RandomOverSampler(random_state=random_state)
+    X_ros, y_ros = ros.fit_resample(X, y)
 
-    smote_df = pd.concat([pd.DataFrame(X_smote, columns=X.columns), pd.Series(y_smote, name='Class')], axis=1)
+    oversampled_X = pd.DataFrame(X_ros, columns=X.columns)
+    oversampled_y = y_ros
 
-    return smote_df
+    return oversampled_X, oversampled_y
+
+
+def apply_random_undersampling(data, random_state=0):
+    """
+    Apply RandomUnderSampler to balance the dataset.
+
+    Parameters:
+        data (DataFrame): Input DataFrame containing features and target variable.
+        random_state (int): Random state for reproducibility.
+
+    Returns:
+        undersampled_X (DataFrame): Resampled DataFrame with balanced features.
+        undersampled_y (Series): Resampled target variable.
+    """
+    X = data.drop(columns=['Class'])
+    y = data['Class']
+
+    rus = RandomUnderSampler(random_state=random_state)
+    X_rus, y_rus = rus.fit_resample(X, y)
+
+    undersampled_X = pd.DataFrame(X_rus, columns=X.columns)
+    undersampled_y = y_rus
+
+    return undersampled_X, undersampled_y
+
 
 
 def apply_std_scaler(data, columns):
@@ -487,4 +542,164 @@ def apply_std_scaler(data, columns):
     scaled_data[columns] = std_scaler.fit_transform(data[columns])
     
     return scaled_data, std_scaler
+
+
+def handle_missing_vals_simple(data, strategy: str = 'median'):
+    """
+    Handle missing values in a DataFrame by imputing them using the specified strategy.
+
+    Parameters:
+        data (DataFrame): Input DataFrame containing the data with missing values.
+        strategy (str): The imputation strategy. Possible values are 'mean', 'median', 'most_frequent', or 'constant'.
+            Defaults to 'median'.
+        columns (list): A list of columns in which missing values should be handled. If None, missing values
+            will be handled in all columns. Defaults to None.
+
+    Returns:
+        data_imputed (DataFrame): DataFrame with missing values imputed using the specified strategy.
+        imputer (SimpleImputer): The fitted imputer instance used for imputation.
+    """
+    data_copy = data.copy()
+    imputer = SimpleImputer(strategy=strategy)
+    
+    data_copy = pd.DataFrame(imputer.fit_transform(data_copy), columns=data_copy.columns)
+    
+    return data_copy, imputer
+
+
+
+def handle_missing_vals_knn(data, n_neighbors=5):
+    """
+    Handle missing values in a DataFrame by imputing them using KNNImputer.
+
+    Parameters:
+        data (DataFrame): Input DataFrame containing the data with missing values.
+        n_neighbors (int): Number of neighboring samples to use for imputation.
+        columns (list): A list of columns in which missing values should be handled. If None, missing values
+            will be handled in all columns. Defaults to None.
+
+    Returns:
+        data_imputed (DataFrame): DataFrame with missing values imputed using KNNImputer.
+        imputer (KNNImputer): The fitted KNNImputer instance used for imputation.
+    """
+    data_copy = data.copy()
+    imputer = KNNImputer(n_neighbors=n_neighbors)
+    
+    data_copy = pd.DataFrame(imputer.fit_transform(data_copy), columns=data_copy.columns)
+    
+    return data_copy, imputer
+
+
+def detect_outliers_with_lof(data, n_neighbors=20):
+    """
+    Detect outliers using Local Outlier Factor (LOF) algorithm.
+
+    Parameters:
+        data (DataFrame): Input DataFrame containing the data.
+        columns (list): List of columns to consider for outlier detection.
+        n_neighbors (int): Number of neighbors to consider for LOF algorithm.
+
+    Returns:
+        clean_data (DataFrame): DataFrame without the detected outliers.
+        clf (LocalOutlierFactor): Fitted LOF model.
+    """
+    clf = LocalOutlierFactor(n_neighbors=n_neighbors)
+    outlier_labels = clf.fit_predict(data)
+
+    clean_data = data.loc[outlier_labels != -1, :]
+
+    return clean_data, clf
+
+def remove_outliers_with_iqr(data, columns):
+    """
+    Remove outliers using the Interquartile Range (IQR) method.
+
+    Parameters:
+        data (DataFrame): Input DataFrame containing the data.
+        columns (list): List of columns to consider for outlier detection.
+
+    Returns:
+        clean_data (DataFrame): DataFrame without the detected outliers.
+    """
+    clean_data = data.copy()
+    for column in columns:
+        Q1 = clean_data[column].quantile(0.25)
+        Q3 = clean_data[column].quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+        clean_data = clean_data[(clean_data[column] >= lower_bound) & (clean_data[column] <= upper_bound)]
+
+    return clean_data
+
+def remove_collinear(dataframe, threshold=0.7):
+    """
+    Remove collinear features from the DataFrame based on the correlation coefficient.
+
+    Collinear features are highly correlated features that may introduce redundancy in the data and negatively impact the performance and interpretability of machine learning models.
+
+    Parameters:
+        dataframe (DataFrame): The input DataFrame containing features.
+        threshold (float): The threshold value for the correlation coefficient.
+            Features with a correlation coefficient greater than or equal to this threshold will be considered collinear.
+            Defaults to 0.7.
+
+    Returns:
+        DataFrame: DataFrame with collinear features removed.
+
+    Notes:
+        This function iteratively removes one feature from each pair of collinear features until no more collinear features remain above the specified threshold.
+        It prints the names of the removed columns during each iteration.
+
+    Example:
+        # Remove collinear features from the DataFrame with a threshold of 0.8
+        clean_data = remove_collinear(data, threshold=0.8)
+    """
+    dataf = dataframe.copy()
+    while True:
+        corr_matrix = dataf.corr().abs()
+
+        upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
+        
+        if (upper >= threshold).values.any():
+            to_drop = []
+            for col in upper.columns:
+                if any(upper[col] >= threshold):
+                    to_drop.append(col)
+                    break
+                    
+            dataf = dataf.drop(to_drop, axis=1)
+
+            print("columns removed: ", to_drop)
+        else:
+            break
+    return dataf
+
+
+def select_features_rfecv(X, y, cv=5, scoring='f1_weighted'):
+    """
+    Select features using Recursive Feature Elimination with Cross-Validation (RFECV).
+
+    Parameters:
+        X : array-like or DataFrame
+            The feature matrix.
+        y : array-like
+            The target variable.
+        cv : int, cross-validation generator or an iterable, optional (default=5)
+            Determines the cross-validation splitting strategy.
+        scoring : str or callable, optional (default='f1_weighted')
+            A scoring method to evaluate the performance of the estimator.
+
+    Returns:
+        DataFrame:
+            DataFrame containing the selected features.
+    """
+    rf_classifier = RandomForestClassifier()
+
+    rfecv_selector = RFECV(estimator=rf_classifier, cv=cv, scoring=scoring)
+    rfecv_selector.fit(X, y)
+
+    selected_features = X.columns[rfecv_selector.support_]
+
+    return X[selected_features]
 
