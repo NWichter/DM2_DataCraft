@@ -648,27 +648,21 @@ def detect_outliers_with_lof(data, n_neighbors=20):
 
     return clean_data, clf
 
-def remove_outliers_with_iqr(data, columns):
-    """
-    Remove outliers using the Interquartile Range (IQR) method.
-
-    Parameters:
-        data (DataFrame): Input DataFrame containing the data.
-        columns (list): List of columns to consider for outlier detection.
-
-    Returns:
-        clean_data (DataFrame): DataFrame without the detected outliers.
-    """
-    clean_data = data.copy()
-    for column in columns:
-        Q1 = clean_data[column].quantile(0.25)
-        Q3 = clean_data[column].quantile(0.75)
-        IQR = Q3 - Q1
-        lower_bound = Q1 - 1.5 * IQR
-        upper_bound = Q3 + 1.5 * IQR
-        clean_data = clean_data[(clean_data[column] >= lower_bound) & (clean_data[column] <= upper_bound)]
-
-    return clean_data
+def replace_outliers_with_thresholds(dataframe, columns, target):    
+    dataframe_copy = dataframe.copy()
+    
+    for variable in columns:
+        if variable != target:
+            quartile1 = dataframe_copy[variable].quantile(0.01)
+            quartile3 = dataframe_copy[variable].quantile(0.99)
+            interquantile_range = quartile3 - quartile1
+            up_limit = quartile3 + 1.5 * interquantile_range
+            low_limit = quartile1 - 1.5 * interquantile_range
+            
+            dataframe_copy.loc[(dataframe_copy[variable] < low_limit), variable] = low_limit
+            dataframe_copy.loc[(dataframe_copy[variable] > up_limit), variable] = up_limit
+    
+    return dataframe_copy
 
 def remove_collinear(dataframe, threshold=0.7):
     """
