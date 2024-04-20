@@ -259,6 +259,48 @@ class ModelSelection:
         for name, acc in self.mean_result_accuracy.items():
             print(f"{name} = {acc:.6f}")
         print(f"\nBest Estimator (Accuracy): {self.best_estimator_name_accuracy}")
+
+    def calculate_cost_matrix_cv2(self, n_folds=5):
+        for name, estimator in self.estimators:
+            if len(self.transformers) == 0:
+                cost_matrix_pipe = Pipeline(
+                    [
+                        ('ClassificationModel', estimator)
+                    ]
+                )
+            else:
+                cost_matrix_pipe = Pipeline(
+                    [
+                        ('ColumnTransformers', self.col_transformer), 
+                        ('ClassificationModel', estimator)
+                    ]
+                )
+                
+            stratif_cv = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=0)
+            
+            y_pred = cross_val_predict(cost_matrix_pipe, self.x_train, self.encoded_y_train, cv=stratif_cv)
+            confusion_matrix_data = confusion_matrix(self.encoded_y_train, y_pred)
+
+            """
+            print(f'CV Confusion Matrix for {estimator}')
+            print(self.target_label_mapping)
+            plt.figure(figsize=(4, 3))
+            sns.heatmap(confusion_matrix_data, annot=True, cmap='Reds', fmt='g')
+            plt.xlabel('Predicted')
+            plt.ylabel('Actual')
+            plt.title('Confusion Matrix')
+            plt.show()"""
+            
+            error_value = np.sum(confusion_matrix_data * self.cost_matrix) / len(self.encoded_y_train)            
+            self.error_cost_matrix_results[name] = error_value
+            
+        self.best_estimator_name_cost_matrix = min(self.error_cost_matrix_results, key=self.error_cost_matrix_results.get)
+        self.best_estimator_obj_cost_matrix = self.get_estimator_by_name(self.best_estimator_name_cost_matrix)
+        
+        print("CV Results for Cost Matrix Error Score:\n")
+        for name, cost_err in self.error_cost_matrix_results.items():
+            print(f"{name} = {cost_err:.6f}")
+        print(f"\nBest Estimator (Cost Metric Error Score): {self.best_estimator_name_cost_matrix}")
     
     def custom_error_cost_score(self, y_true, y_pred):
         cm = confusion_matrix(y_true, y_pred)
@@ -672,7 +714,7 @@ def remove_collinear(dataframe, threshold=0.7):
     return dataf
 
 
-def select_features_rfecv(X, y, cv=5, scoring='f1_weighted'):
+def select_features_rfecv(X, y, classifier, cv=5, scoring='f1_weighted'):
     """
     Select features using Recursive Feature Elimination with Cross-Validation (RFECV).
 
@@ -690,12 +732,12 @@ def select_features_rfecv(X, y, cv=5, scoring='f1_weighted'):
         DataFrame:
             DataFrame containing the selected features.
     """
-    rf_classifier = RandomForestClassifier()
+    X_cop = X.copy()
 
-    rfecv_selector = RFECV(estimator=rf_classifier, cv=cv, scoring=scoring)
-    rfecv_selector.fit(X, y)
+    rfecv_selector = RFECV(estimator=classifier, cv=cv, scoring=scoring)
+    rfecv_selector.fit(X_cop, y)
 
-    selected_features = X.columns[rfecv_selector.support_]
+    selected_features = X_cop.columns[rfecv_selector.support_]
 
-    return X[selected_features]
+    return X_cop[selected_features]
 
