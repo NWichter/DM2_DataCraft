@@ -439,7 +439,7 @@ class ModelSelection:
         print(f"Best parameters found by GridSearchCV ({scoring}):\n{self.grid_best_parameters}")
         print(f"\nBest score found by GridSearchCV ({scoring}):\n{self.grid_best_score}")
         
-    def predict_on_test(self, estimator):
+    def predict_on_test(self):
         self.test_preds = self.grid_best_model.predict(self.x_test)
         print(self.target_label_mapping)
         print(classification_report(self.target_label_encoder.transform(self.y_test.values.ravel()), self.test_preds))
