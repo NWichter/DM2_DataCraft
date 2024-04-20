@@ -429,7 +429,7 @@ class ModelSelection:
         plt.title('Confusion Matrix')
         plt.show()
 
-def apply_one_hot_encoding(data, categorical_column):
+def apply_one_hot_encoding(X_train, categorical_column):
     """
     Apply one-hot encoding to a categorical column in the DataFrame.
 
@@ -441,17 +441,17 @@ def apply_one_hot_encoding(data, categorical_column):
         ohe_encoder (OneHotEncoder): One-hot encoder object fitted on categorical data.
         X_encoded (DataFrame): DataFrame with categorical column replaced by one-hot encoded columns.
     """
-    data_copy = data.copy()
+    X_train_copy = X_train.copy()
     ohe_encoder = OneHotEncoder()
 
-    X_encoded = pd.DataFrame(
-        ohe_encoder.fit_transform(data_copy[[categorical_column]]).toarray(),
+    X_train_copy_encoded = pd.DataFrame(
+        ohe_encoder.fit_transform(X_train_copy[[categorical_column]]).toarray(),
         columns=ohe_encoder.get_feature_names_out([categorical_column])
     )
 
-    X_encoded_last = pd.concat([data_copy.drop(columns=[categorical_column]).reset_index(drop=True), X_encoded], axis=1)
+    X_train_encoded_last = pd.concat([X_train_copy.drop(columns=[categorical_column]).reset_index(drop=True), X_train_copy_encoded], axis=1)
 
-    return X_encoded_last, ohe_encoder
+    return X_train_encoded_last, ohe_encoder
 
 
 def apply_smote(X, y, random_state=0):
@@ -471,12 +471,12 @@ def apply_smote(X, y, random_state=0):
     X_smote, y_smote = smote.fit_resample(X, y)
 
     smote_x = pd.DataFrame(X_smote, columns=X.columns)
-    smote_y = pd.Series(y_smote, name='Class')
+    smote_y = y_smote
 
     return smote_x, smote_y
 
 
-def apply_random_oversampling(data, random_state=0):
+def apply_random_oversampling(X, y, random_state=0):
     """
     Apply RandomOverSampler to balance the dataset.
 
@@ -488,9 +488,6 @@ def apply_random_oversampling(data, random_state=0):
         oversampled_X (DataFrame): Resampled DataFrame with balanced features.
         oversampled_y (Series): Resampled target variable.
     """
-    X = data.drop(columns=['Class'])
-    y = data['Class']
-
     ros = RandomOverSampler(random_state=random_state)
     X_ros, y_ros = ros.fit_resample(X, y)
 
@@ -500,7 +497,7 @@ def apply_random_oversampling(data, random_state=0):
     return oversampled_X, oversampled_y
 
 
-def apply_random_undersampling(data, random_state=0):
+def apply_random_undersampling(X, y, random_state=0):
     """
     Apply RandomUnderSampler to balance the dataset.
 
@@ -512,9 +509,6 @@ def apply_random_undersampling(data, random_state=0):
         undersampled_X (DataFrame): Resampled DataFrame with balanced features.
         undersampled_y (Series): Resampled target variable.
     """
-    X = data.drop(columns=['Class'])
-    y = data['Class']
-
     rus = RandomUnderSampler(random_state=random_state)
     X_rus, y_rus = rus.fit_resample(X, y)
 
@@ -525,7 +519,7 @@ def apply_random_undersampling(data, random_state=0):
 
 
 
-def apply_std_scaler(data, columns):
+def apply_std_scaler(X, columns):
     """
     Apply standard scaling to specified columns of the data using a pre-fitted scaler.
 
@@ -538,10 +532,12 @@ def apply_std_scaler(data, columns):
         scaler (StandardScaler): Fitted StandardScaler object.
     """
     std_scaler = StandardScaler()
-    scaled_data = data.copy()
-    scaled_data[columns] = std_scaler.fit_transform(data[columns])
+    X_copy = X.copy()
+    X_scaled = pd.DataFrame(std_scaler.fit_transform(X_copy[columns]), columns=X_copy[columns].columns).reset_index(drop=True)
+    X_copy_cat = X_copy.loc[:, X_copy.columns.str.contains('Group')].reset_index(drop=True)
+    X_scaled_last = pd.concat([X_scaled, X_copy_cat], axis=1)
     
-    return scaled_data, std_scaler
+    return X_scaled_last, std_scaler
 
 
 def handle_missing_vals_simple(data, strategy: str = 'median'):
