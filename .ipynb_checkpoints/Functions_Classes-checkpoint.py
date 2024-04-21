@@ -301,16 +301,8 @@ class ModelSelection:
         for name, cost_err in self.error_cost_matrix_results.items():
             print(f"{name} = {cost_err:.6f}")
         print(f"\nBest Estimator (Cost Metric Error Score): {self.best_estimator_name_cost_matrix}")
-    
-    def custom_error_cost_score(self, y_true, y_pred):
-        cm = confusion_matrix(y_true, y_pred)
-        error_value = np.sum(cm * self.cost_matrix) / len(y_true)
-        
-        return -error_value
-    
-    def calculate_cost_matrix_error_cv(self, n_folds=5):
-        cost_matrix_socrer = make_scorer(self.custom_error_cost_score, greater_is_better=True)
-        
+  
+    def calculate_cost_matrix_error_cv(self, custom_cost_func, n_folds=5):
         for name, estimator in self.estimators:
             if len(self.transformers) == 0:
                 cost_matrix_pipe = Pipeline(
@@ -327,14 +319,14 @@ class ModelSelection:
                 )
             
             stratif_cv = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=0)
-            
             cost_matrix_cv_score = cross_val_score(
                 cost_matrix_pipe, 
                 self.x_train, 
                 self.encoded_y_train, 
                 cv=stratif_cv, 
-                scoring=cost_matrix_socrer, 
-                n_jobs=-1
+                scoring=custom_cost_func, 
+                n_jobs=-1,
+                error_score="raise"
             )
             
             self.error_cost_matrix_results[name] = -cost_matrix_cv_score
@@ -426,7 +418,8 @@ class ModelSelection:
             cv=cv, 
             n_jobs=-1, 
             verbose=2, 
-            scoring=scoring
+            scoring=scoring,
+            error_score="raise"
         )
         grid_search.fit(self.x_train, self.encoded_y_train)
         
@@ -734,4 +727,14 @@ def select_features_rfecv(X, y, classifier, cv=5, scoring='f1_weighted'):
     selected_features = X_cop.columns[rfecv_selector.support_]
 
     return X_cop[selected_features]
+
+def custom_error_cost_score(y_true, y_pred):
+        error_cost_matrix = np.array([[0, 1, 2],
+                                      [1, 0, 1],
+                                      [2, 1, 0]])
+        cm = confusion_matrix(y_true, y_pred)
+        error_value = np.sum(cm * error_cost_matrix) / len(y_true)
+        
+        return error_value
+matrix_error_function = make_scorer(custom_error_cost_score, greater_is_better=False)
 
