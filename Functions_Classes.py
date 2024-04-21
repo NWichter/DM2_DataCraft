@@ -4,7 +4,7 @@ import seaborn as sns
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, VotingClassifier, AdaBoostClassifier, StackingClassifier
 from sklearn.model_selection import cross_val_score, StratifiedKFold, train_test_split, cross_val_predict, GridSearchCV
 from sklearn.metrics import accuracy_score, f1_score, make_scorer, roc_auc_score, confusion_matrix, classification_report
-from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
+from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder, RobustScaler
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.tree import DecisionTreeClassifier
@@ -573,6 +573,28 @@ def apply_std_scaler(X, columns):
     return X_scaled_last, std_scaler
 
 
+def apply_robust_scaler(X, columns):
+    """
+    Apply robust scaling to specified columns of the data using a pre-fitted scaler.
+
+    Parameters:
+        X (DataFrame): Input DataFrame containing features.
+        columns (list): List of column names to apply robust scaling to.
+
+    Returns:
+        X_scaled (DataFrame): DataFrame with specified columns robustly scaled.
+        scaler (RobustScaler): Fitted RobustScaler object.
+    """
+    robust_scaler = RobustScaler()
+    X_copy = X.copy()
+    X_scaled = pd.DataFrame(robust_scaler.fit_transform(X_copy[columns]), columns=X_copy[columns].columns).reset_index(drop=True)
+    X_copy_cat = X_copy.loc[:, X_copy.columns.str.contains('Group')].reset_index(drop=True)
+    X_scaled_last = pd.concat([X_scaled, X_copy_cat], axis=1)
+    
+    return X_scaled_last, robust_scaler
+
+
+
 def handle_missing_vals_simple(data, strategy: str = 'median'):
     """
     Handle missing values in a DataFrame by imputing them using the specified strategy.
@@ -768,10 +790,11 @@ def select_k_best(X_train, y_train, score_func, num_of_features):
     return X_train_selected, sorted_importances
 
 
-def sequential_feature_selector(X_train, y_train, estimator, tol=None, scoring=None, cv=5, n_jobs=None):
+def sequential_feature_selector(X_train, y_train, estimator, tol=None, scoring=matrix_error_function, cv=5, n_jobs=-1):
     selector = SequentialFeatureSelector(estimator, 
                                          direction='backward', 
                                          tol=tol, 
+                                         n_features_to_select='auto',
                                          scoring=scoring, 
                                          cv=cv, 
                                          n_jobs=n_jobs)
@@ -782,8 +805,9 @@ def sequential_feature_selector(X_train, y_train, estimator, tol=None, scoring=N
     
     selected_features = X_train.columns[selected_feature_indices]
     
-    n_features_selected = selector.n_features_to_select_
+    X_train_selected = selector.transform(X_train)
     
-    support_mask = selector.support_
+    X_train_selected_df = pd.DataFrame(X_train_selected, columns=selected_features)
     
-    return selected_features, n_features_selected, support_mask
+    return X_train_selected_df, selected_features, len(selected_features)
+
