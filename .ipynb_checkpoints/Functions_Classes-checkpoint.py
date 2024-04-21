@@ -766,3 +766,24 @@ def select_k_best(X_train, y_train, score_func, num_of_features):
     X_train_selected = selector.transform(X_train_cop) #transform x_train
 
     return X_train_selected, sorted_importances
+
+
+def sequential_feature_selector(X_train, y_train, estimator, tol=None, scoring=None, cv=5, n_jobs=None):
+    selector = SequentialFeatureSelector(estimator, 
+                                         direction='backward', 
+                                         tol=tol, 
+                                         scoring=scoring, 
+                                         cv=cv, 
+                                         n_jobs=n_jobs)
+    
+    selector.fit(X_train, y_train)
+    
+    selected_feature_indices = selector.get_support(indices=True)
+    
+    selected_features = X_train.columns[selected_feature_indices]
+    
+    n_features_selected = selector.n_features_to_select_
+    
+    support_mask = selector.support_
+    
+    return selected_features, n_features_selected, support_mask
