@@ -16,9 +16,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.decomposition import PCA
 import random
 from sklearn.neighbors import LocalOutlierFactor
-from sklearn.feature_selection import RFECV
-
-
+from sklearn.feature_selection import RFECV,SelectKBest, SequentialFeatureSelector, f_classif, mutual_info_classif
 
 from sklearn.impute import SimpleImputer, KNNImputer
 
@@ -592,10 +590,14 @@ def handle_missing_vals_simple(data, strategy: str = 'median'):
     """
     data_copy = data.copy()
     imputer = SimpleImputer(strategy=strategy)
+
+    cat_df = data_copy.loc[:, data_copy.columns.str.contains('Group')].reset_index(drop=True)
+    num_df = data_copy.loc[:, ~data_copy.columns.str.contains('Group')].reset_index(drop=True)
     
-    data_copy = pd.DataFrame(imputer.fit_transform(data_copy), columns=data_copy.columns)
+    num_df = pd.DataFrame(imputer.fit_transform(num_df), columns=num_df.columns)
+    data_last = pd.concat([num_df, cat_df], axis=1)
     
-    return data_copy, imputer
+    return data_last, imputer
 
 
 
@@ -614,11 +616,14 @@ def handle_missing_vals_knn(data, n_neighbors=5):
         imputer (KNNImputer): The fitted KNNImputer instance used for imputation.
     """
     data_copy = data.copy()
+    cat_df = data_copy.loc[:, data_copy.columns.str.contains('Group')].reset_index(drop=True)
+    num_df = data_copy.loc[:, ~data_copy.columns.str.contains('Group')].reset_index(drop=True)
     imputer = KNNImputer(n_neighbors=n_neighbors)
     
-    data_copy = pd.DataFrame(imputer.fit_transform(data_copy), columns=data_copy.columns)
+    num_df = pd.DataFrame(imputer.fit_transform(num_df), columns=num_df.columns)
+    data_last = pd.concat([num_df, cat_df], axis=1)
     
-    return data_copy, imputer
+    return data_last, imputer
 
 
 def detect_outliers_with_lof(data, n_neighbors=20):
@@ -720,9 +725,17 @@ def select_features_rfecv(X, y, classifier, cv=5, scoring='f1_weighted'):
             DataFrame containing the selected features.
     """
     X_cop = X.copy()
+    y_cop = y.copy()
+
+    lab_enc = LabelEncoder()
+    y_cop = lab_enc.fit_transform(y_cop)
+    target_label_mapping = {
+            label: category for label, category in enumerate(lab_enc.classes_)
+        }
+    print(target_label_mapping)
 
     rfecv_selector = RFECV(estimator=classifier, cv=cv, scoring=scoring)
-    rfecv_selector.fit(X_cop, y)
+    rfecv_selector.fit(X_cop, y_cop)
 
     selected_features = X_cop.columns[rfecv_selector.support_]
 
@@ -738,3 +751,18 @@ def custom_error_cost_score(y_true, y_pred):
         return error_value
 matrix_error_function = make_scorer(custom_error_cost_score, greater_is_better=False)
 
+def select_k_best(X_train, y_train, score_func, num_of_features):
+    X_train_cop = X_train.copy()
+    y_train_cop = y_train.copy()
+    
+    selector = SelectKBest(score_func=score_func, k=num_of_features) #f_classif, mutual_info_classif
+    selector.fit(X_train_cop, y_train_cop)
+    
+    selected_feature_indices = selector.get_support(indices=True) #get feature indices
+    selected_features = X_train_cop.columns[selected_feature_indices] #get feature names using indices
+    feature_scores = selector.scores_[selected_feature_indices] #select scores using indices
+    feature_importances = dict(zip(selected_features, feature_scores)) #zip the socres and corresponding feature names
+    sorted_importances = dict(sorted(feature_importances.items(), key=lambda item: item[1], reverse=True)) #sort the feature importances
+    X_train_selected = selector.transform(X_train_cop) #transform x_train
+
+    return X_train_selected, sorted_importances
