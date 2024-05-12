@@ -615,7 +615,7 @@ def handle_missing_vals_simple(data, strategy: str = 'median'):
 
     cat_df = data_copy.loc[:, data_copy.columns.str.contains('Group')].reset_index(drop=True)
     num_df = data_copy.loc[:, ~data_copy.columns.str.contains('Group')].reset_index(drop=True)
-    
+
     num_df = pd.DataFrame(imputer.fit_transform(num_df), columns=num_df.columns)
     data_last = pd.concat([num_df, cat_df], axis=1)
     
